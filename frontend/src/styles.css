@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.mobile-modal {
+  max-height: calc(100svh - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mode-button {
+  @apply inline-flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 sm:flex-none sm:px-4;
+}
+
+.mode-button-active {
+  @apply bg-slate-900 text-white hover:bg-slate-900;
+}
+
+.auth-tab {
+  @apply flex-1 rounded-md px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white;
+}
+
+.auth-tab-active {
+  @apply bg-white text-slate-950 shadow-sm;
+}
+
+.field-label {
+  @apply mt-4 block text-sm font-semibold text-slate-700;
+}
+
+.field-input {
+  @apply mt-2 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 sm:text-sm;
+}
+
+.message-user {
+  @apply max-w-full break-words rounded-lg bg-slate-900 px-4 py-3 text-white;
+}
+
+.message-assistant {
+  @apply max-w-full break-words rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800;
+}

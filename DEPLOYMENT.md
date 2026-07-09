@@ -31,6 +31,59 @@ DJANGO_HSTS_PRELOAD=true
 
 Only enable HSTS subdomains/preload when every relevant subdomain is HTTPS-ready.
 
+## Vercel Together
+
+The repo now deploys as one Vercel project:
+
+```text
+Research_assistant/
+  backend/
+  src/
+  index.html
+  package.json
+  vite.config.js
+  vercel.json
+```
+
+On the Vercel import screen:
+
+```text
+Application Preset: Django
+Root Directory: ./
+Install Command: npm ci && pip install -r requirements.txt
+Build Command: python build.py
+Output Directory: N/A
+```
+
+How routing works:
+
+- `/api/*` is handled by Django.
+- `/` and normal app routes are served by the React build.
+- React assets are built with `/static/` paths and served through Django/Vercel static files.
+
+Required Vercel environment variables:
+
+```env
+DJANGO_DEBUG=false
+DJANGO_SECRET_KEY=use-a-long-random-secret
+DJANGO_ALLOWED_HOSTS=your-project.vercel.app,your-custom-domain.com
+CORS_ALLOWED_ORIGINS=https://your-project.vercel.app,https://your-custom-domain.com
+CSRF_TRUSTED_ORIGINS=https://your-project.vercel.app,https://your-custom-domain.com
+DATABASE_URL=postgresql://...
+OPENAI_API_KEY=...
+TAVILY_API_KEY=...
+EMAIL_ADDRESS=...
+EMAIL_APP_PASSWORD=...
+```
+
+Run migrations against production after deploy:
+
+```bash
+python manage.py migrate
+```
+
+## Manual Backend Deploy
+
 Backend deploy commands:
 
 ```bash
@@ -40,10 +93,11 @@ python backend/manage.py check --deploy
 gunicorn --chdir backend research_api.wsgi:application
 ```
 
-Frontend deploy:
+## Split Frontend Deploy
+
+Frontend deploy, only if you later split the frontend from Django:
 
 ```bash
-cd frontend
 npm ci
 npm run build
 ```

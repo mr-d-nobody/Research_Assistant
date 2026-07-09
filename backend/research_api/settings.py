@@ -32,6 +32,9 @@ ALLOWED_HOSTS = env_csv(
     "DJANGO_ALLOWED_HOSTS",
     "localhost,127.0.0.1" if DEBUG else "",
 )
+VERCEL_URL = os.getenv("VERCEL_URL")
+if VERCEL_URL and VERCEL_URL not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(VERCEL_URL)
 
 if not DEBUG and not ALLOWED_HOSTS:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG=false.")
@@ -75,7 +78,11 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
-STATIC_URL = "static/"
+FRONTEND_DIST_DIR = ROOT_DIR / "dist"
+FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [("assets", FRONTEND_ASSETS_DIR)] if FRONTEND_ASSETS_DIR.exists() else []
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = env_csv(
@@ -83,6 +90,10 @@ CORS_ALLOWED_ORIGINS = env_csv(
     "http://localhost:5173,http://127.0.0.1:5173" if DEBUG else "",
 )
 CSRF_TRUSTED_ORIGINS = env_csv("CSRF_TRUSTED_ORIGINS")
+if VERCEL_URL:
+    vercel_origin = f"https://{VERCEL_URL}"
+    if vercel_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(vercel_origin)
 
 AUTH_TOKEN_TTL_HOURS = int(os.getenv("AUTH_TOKEN_TTL_HOURS", "168"))
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE", "262144"))

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "django",
+  "installCommand": "npm ci && pip install -r requirements.txt",
+  "buildCommand": "python build.py",
+  "functions": {
+    "backend/research_api/wsgi.py": {
+      "maxDuration": 60
+    }
+  }
+}

@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from assistant_core.views import (
     chat_view,
@@ -11,6 +11,7 @@ from assistant_core.views import (
     signup_view,
     usage_view,
 )
+from .views import frontend_view
 
 
 urlpatterns = [
@@ -23,4 +24,5 @@ urlpatterns = [
     path("api/usage/", usage_view),
     path("api/conversations/", conversation_history_view),
     path("api/chat/", chat_view),
+    re_path(r"^(?P<_path>.*)$", frontend_view),
 ]

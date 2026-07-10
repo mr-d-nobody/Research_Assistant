@@ -1,11 +1,13 @@
 import {
   CheckCircle2,
+  LogIn,
   MessageSquare,
   Search,
   ShieldCheck,
-  Sparkles,
+  UserPlus,
 } from "lucide-react"
 
+import BrandMark from "../components/BrandMark"
 import FeatureCard from "../components/FeatureCard"
 
 
@@ -24,26 +26,37 @@ export default function AuthPage({
     <main className="min-h-screen min-h-[100svh] bg-[#f7f5ef] text-slate-950">
       <section className="mx-auto grid min-h-screen min-h-[100svh] max-w-6xl items-center gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-sm font-semibold text-emerald-700 shadow-sm">
-            <Sparkles className="h-4 w-4" />
-            Research Assistant
+          <div className="inline-flex rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <BrandMark />
           </div>
           <h1 className="mt-5 text-3xl font-semibold tracking-normal sm:text-5xl">
-            Sign in before you research.
+            Sign in to ResearchOps AI.
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-            Your focused workspace for quick answers, source-backed research, and clean summaries.
+            Chat, research, summarize, and send clean source-backed results from one focused workspace.
           </p>
 
           <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2">
-            <FeatureCard icon={ShieldCheck} text="Secure sign in" />
+            <FeatureCard icon={ShieldCheck} text="Secure workspace" />
             <FeatureCard icon={CheckCircle2} text="1 research daily" />
             <FeatureCard icon={MessageSquare} text="10 chats daily" />
-            <FeatureCard icon={Search} text="Web-backed research mode" />
+            <FeatureCard icon={Search} text="Source-backed research" />
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="w-full rounded-lg border border-slate-200 bg-white p-4 shadow-panel sm:p-6">
+        <form onSubmit={onSubmit} className="w-full rounded-xl border border-slate-200 bg-white/95 p-4 shadow-panel backdrop-blur sm:p-6">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">
+                {isSignup ? "New workspace" : "Welcome back"}
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                {isSignup ? "Create your account" : "Sign in"}
+              </h2>
+            </div>
+            <BrandMark size="sm" stacked />
+          </div>
+
           <div className="mb-6 inline-flex w-full rounded-lg border border-slate-200 bg-slate-50 p-1">
             <button
               type="button"
@@ -112,8 +125,9 @@ export default function AuthPage({
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-5 inline-flex min-h-[46px] w-full items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="mt-5 inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
+            {!isLoading && (isSignup ? <UserPlus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />)}
             {isLoading ? "Please wait..." : isSignup ? "Create account" : "Sign in"}
           </button>
         </form>

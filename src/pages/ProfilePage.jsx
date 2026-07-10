@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { ArrowLeft, LogOut } from "lucide-react"
 
+import BrandMark from "../components/BrandMark"
 import Limit from "../components/Limit"
 import ProfileCard from "../components/ProfileCard"
 import { apiRequest } from "../lib/api"
@@ -21,9 +22,10 @@ export default function ProfilePage({ user, onBack, onLogout, onSessionRefresh }
       <div className="mx-auto flex min-h-screen min-h-[100svh] w-full max-w-5xl flex-col px-3 py-3 sm:px-6 sm:py-5 lg:px-8">
         <header className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl">
+            <BrandMark size="lg" />
+            <p className="mt-2 text-sm font-medium text-slate-500">
               Profile
-            </h1>
+            </p>
           </div>
 
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-row sm:items-center sm:gap-3">
@@ -39,7 +41,7 @@ export default function ProfilePage({ user, onBack, onLogout, onSessionRefresh }
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg border border-red-100 bg-red-50 px-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100"
               title="Log out"
             >
               <LogOut className="h-4 w-4" />

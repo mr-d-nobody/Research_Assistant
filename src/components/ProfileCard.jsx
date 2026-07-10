@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { KeyRound } from "lucide-react"
+import { KeyRound, UserRound } from "lucide-react"
 
 import { apiRequest } from "../lib/api"
 
@@ -35,10 +35,11 @@ export default function ProfileCard({ user, onSessionRefresh }) {
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 className="text-sm font-semibold uppercase tracking-normal text-slate-500">
-        Profile
-      </h2>
-      <div className="mt-4 rounded-lg bg-slate-50 p-3">
+      <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-normal text-slate-500">
+        <UserRound className="h-4 w-4 text-emerald-700" />
+        Signed in account
+      </div>
+      <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-3">
         <div className="text-xs font-semibold uppercase tracking-normal text-slate-500">
           User ID
         </div>

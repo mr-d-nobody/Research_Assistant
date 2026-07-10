@@ -8,6 +8,7 @@ import {
   User,
 } from "lucide-react"
 
+import BrandMark from "../components/BrandMark"
 import Message from "../components/Message"
 import { apiRequest } from "../lib/api"
 
@@ -104,11 +105,7 @@ export default function AssistantPage({ user, onProfileClick }) {
     <main className="min-h-screen min-h-[100svh] bg-[#f7f5ef] text-slate-950">
       <div className="mx-auto flex h-screen min-h-[100svh] w-full max-w-7xl flex-col px-3 py-3 sm:px-6 sm:py-5 lg:px-8">
         <header className="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl">
-              Research Assistant
-            </h1>
-          </div>
+          <BrandMark size="lg" />
 
           <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
             <div className="inline-flex min-w-0 flex-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm sm:flex-none">

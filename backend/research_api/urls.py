@@ -11,7 +11,7 @@ from assistant_core.views import (
     signup_view,
     usage_view,
 )
-from .views import dist_file_view, frontend_view
+from .views import frontend_view
 
 
 urlpatterns = [
@@ -24,6 +24,5 @@ urlpatterns = [
     path("api/usage/", usage_view),
     path("api/conversations/", conversation_history_view),
     path("api/chat/", chat_view),
-    path("<filename>", dist_file_view),
     re_path(r"^(?P<_path>.*)$", frontend_view),
 ]

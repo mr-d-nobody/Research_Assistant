@@ -15,6 +15,7 @@ export default function App() {
   const [authError, setAuthError] = useState("")
   const [authLoading, setAuthLoading] = useState(false)
   const [page, setPage] = useState("assistant")
+  const [conversation, setConversation] = useState(null)
 
   useEffect(() => {
     cleanBadUrl()
@@ -27,6 +28,7 @@ export default function App() {
       .catch(() => {
         clearToken()
         setToken(null)
+        setConversation(null)
       })
   }, [token])
 
@@ -49,6 +51,7 @@ export default function App() {
       storeToken(data.token)
       setToken(data.token)
       setUser(data.user)
+      setConversation(null)
       setPage("assistant")
     } catch (error) {
       setAuthError(error.message)
@@ -66,6 +69,7 @@ export default function App() {
     clearToken()
     setToken(null)
     setUser(null)
+    setConversation(null)
     setPage("assistant")
   }
 
@@ -104,5 +108,12 @@ export default function App() {
     )
   }
 
-  return <AssistantPage user={user} onProfileClick={() => setPage("profile")} />
+  return (
+    <AssistantPage
+      user={user}
+      conversation={conversation}
+      setConversation={setConversation}
+      onProfileClick={() => setPage("profile")}
+    />
+  )
 }

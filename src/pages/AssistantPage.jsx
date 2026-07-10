@@ -22,27 +22,48 @@ const initialConversation = [
 ]
 
 
-export default function AssistantPage({ user, onProfileClick }) {
+export default function AssistantPage({ user, conversation, setConversation, onProfileClick }) {
   const [mode, setMode] = useState("chat")
   const [message, setMessage] = useState("")
   const [sendEmail, setSendEmail] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isHistoryLoading, setIsHistoryLoading] = useState(!conversation)
   const [error, setError] = useState("")
-  const [conversation, setConversation] = useState(initialConversation)
 
-  const canSubmit = useMemo(() => message.trim() && !isLoading, [message, isLoading])
+  const canSubmit = useMemo(
+    () => message.trim() && !isLoading && !isHistoryLoading,
+    [message, isLoading, isHistoryLoading],
+  )
 
   useEffect(() => {
+    let isCurrent = true
+
+    if (conversation) {
+      setIsHistoryLoading(false)
+      return () => {
+        isCurrent = false
+      }
+    }
+
+    setIsHistoryLoading(true)
     apiRequest("/api/conversations/")
       .then((data) => {
-        if (data.messages?.length) {
-          setConversation(data.messages)
-        }
+        if (!isCurrent) return
+        setConversation(data.messages?.length ? data.messages : initialConversation)
       })
       .catch(() => {
+        if (!isCurrent) return
         // History is helpful, but the assistant can still run without it.
+        setConversation(initialConversation)
       })
-  }, [user.id])
+      .finally(() => {
+        if (isCurrent) setIsHistoryLoading(false)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [conversation, setConversation, user.id])
 
   useEffect(() => {
     if (mode === "chat") {
@@ -58,7 +79,7 @@ export default function AssistantPage({ user, onProfileClick }) {
     setError("")
     setMessage("")
     setIsLoading(true)
-    setConversation((items) => [...items, { role: "user", content: trimmedMessage, sources: [] }])
+    setConversation((items) => [...(items || []), { role: "user", content: trimmedMessage, sources: [] }])
 
     try {
       const data = await apiRequest("/api/chat/", {
@@ -143,9 +164,15 @@ export default function AssistantPage({ user, onProfileClick }) {
         <section className="grid min-h-0 flex-1 gap-4">
           <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-panel">
             <div className="mobile-scroll flex-1 space-y-4 overflow-y-auto p-3 sm:p-6">
-              {conversation.map((item, index) => (
+              {(conversation || []).map((item, index) => (
                 <Message key={`${item.role}-${index}`} item={item} />
               ))}
+              {isHistoryLoading && !conversation && (
+                <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+                  <Bot className="h-5 w-5 text-emerald-700" />
+                  Loading your saved conversation...
+                </div>
+              )}
               {isLoading && (
                 <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
                   <Bot className="h-5 w-5 text-emerald-700" />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { apiRequest } from "./lib/api"
-import { cleanBadUrl, clearToken, getStoredToken, storeToken } from "./lib/storage"
+import { cleanBadUrl, clearToken, getStoredToken, getStoredUser, storeToken, storeUser } from "./lib/storage"
 import AssistantPage from "./pages/AssistantPage"
 import AuthPage from "./pages/AuthPage"
 import ProfilePage from "./pages/ProfilePage"
@@ -10,8 +10,7 @@ import ProfilePage from "./pages/ProfilePage"
 export default function App() {
   const [authMode, setAuthMode] = useState("signin")
   const [token, setToken] = useState(() => getStoredToken())
-  const [user, setUser] = useState(null)
-  const [isInitializing, setIsInitializing] = useState(() => !!getStoredToken())
+  const [user, setUser] = useState(() => getStoredUser())
   const [authForm, setAuthForm] = useState({ username: "", email: "", password: "" })
   const [authError, setAuthError] = useState("")
   const [authLoading, setAuthLoading] = useState(false)
@@ -22,19 +21,20 @@ export default function App() {
     cleanBadUrl()
   }, [])
 
+  // Silently verify the cached session in the background
   useEffect(() => {
-    if (!token) {
-      setIsInitializing(false)
-      return
-    }
+    if (!token) return
     apiRequest("/api/auth/me/")
-      .then((data) => setUser(data.user))
+      .then((data) => {
+        setUser(data.user)
+        storeUser(data.user)
+      })
       .catch(() => {
         clearToken()
         setToken(null)
+        setUser(null)
         setConversation(null)
       })
-      .finally(() => setIsInitializing(false))
   }, [token])
 
   async function submitAuth(event) {
@@ -56,6 +56,7 @@ export default function App() {
       storeToken(data.token)
       setToken(data.token)
       setUser(data.user)
+      storeUser(data.user)
       setConversation(null)
       setPage("assistant")
     } catch (error) {
@@ -85,15 +86,8 @@ export default function App() {
     }
     if (data.user) {
       setUser(data.user)
+      storeUser(data.user)
     }
-  }
-
-  if (isInitializing) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f5ef]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700" />
-      </div>
-    )
   }
 
   if (!token || !user) {

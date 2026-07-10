@@ -1,5 +1,6 @@
 export const TOKEN_KEY = "research_assistant_token"
 export const DEVICE_KEY = "research_assistant_device_id"
+export const USER_KEY = "research_assistant_user"
 
 
 export function cleanBadUrl() {
@@ -22,6 +23,22 @@ export function storeToken(token) {
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+}
+
+
+export function getStoredUser() {
+  try {
+    const raw = localStorage.getItem(USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+
+export function storeUser(user) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
 
 

@@ -4,7 +4,7 @@
   "installCommand": "npm ci && pip install -r requirements.txt",
   "buildCommand": "python build.py",
   "functions": {
-    "backend/research_api/wsgi.py": {
+    "research_api/wsgi.py": {
       "maxDuration": 60
     }
   }

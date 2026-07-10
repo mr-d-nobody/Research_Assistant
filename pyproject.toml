@@ -1,5 +1,5 @@
 [tool.vercel]
-entrypoint = "backend.research_api.wsgi:application"
+entrypoint = "research_api.wsgi:application"
 
 [tool.vercel.scripts]
 build = "python build.py"

@@ -8,19 +8,46 @@ import ProfilePage from "./pages/ProfilePage"
 
 
 export default function App() {
-  const [authMode, setAuthMode] = useState("signin")
+  const [pathname, setPathname] = useState(() => window.location.pathname)
   const [token, setToken] = useState(() => getStoredToken())
   const [user, setUser] = useState(() => getStoredUser())
   const [authForm, setAuthForm] = useState({ username: "", email: "", password: "" })
   const [authError, setAuthError] = useState("")
   const [authLoading, setAuthLoading] = useState(false)
-  const [page, setPage] = useState("assistant")
   const [conversation, setConversation] = useState(null)
+
+  const authMode = pathname === "/signup" ? "signup" : "signin"
+
+  function navigateTo(path) {
+    window.history.pushState({}, "", path)
+    setPathname(path)
+  }
 
   useEffect(() => {
     cleanBadUrl()
     initDeviceFingerprint()
+
+    const handlePopState = () => {
+      setPathname(window.location.pathname)
+    }
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
   }, [])
+
+  // Handle URL-based route redirection/guards based on auth status
+  useEffect(() => {
+    if (!token || !user) {
+      if (pathname !== "/signup" && pathname !== "/signin" && pathname !== "/login") {
+        navigateTo("/signin")
+      }
+    } else {
+      if (pathname === "/signup" || pathname === "/signin" || pathname === "/login") {
+        navigateTo("/")
+      } else if (pathname !== "/" && pathname !== "/profile") {
+        navigateTo("/")
+      }
+    }
+  }, [token, user, pathname])
 
   // Silently verify the cached session in the background
   useEffect(() => {
@@ -59,7 +86,7 @@ export default function App() {
       setUser(data.user)
       storeUser(data.user)
       setConversation(null)
-      setPage("assistant")
+      navigateTo("/")
     } catch (error) {
       setAuthError(error.message)
     } finally {
@@ -77,7 +104,7 @@ export default function App() {
     setToken(null)
     setUser(null)
     setConversation(null)
-    setPage("assistant")
+    navigateTo("/signin")
   }
 
   function refreshSession(data) {
@@ -95,7 +122,7 @@ export default function App() {
     return (
       <AuthPage
         authMode={authMode}
-        setAuthMode={setAuthMode}
+        setAuthMode={(mode) => navigateTo(mode === "signup" ? "/signup" : "/signin")}
         form={authForm}
         setForm={setAuthForm}
         error={authError}
@@ -105,11 +132,11 @@ export default function App() {
     )
   }
 
-  if (page === "profile") {
+  if (pathname === "/profile") {
     return (
       <ProfilePage
         user={user}
-        onBack={() => setPage("assistant")}
+        onBack={() => navigateTo("/")}
         onLogout={logout}
         onSessionRefresh={refreshSession}
       />
@@ -121,7 +148,7 @@ export default function App() {
       user={user}
       conversation={conversation}
       setConversation={setConversation}
-      onProfileClick={() => setPage("profile")}
+      onProfileClick={() => navigateTo("/profile")}
     />
   )
 }

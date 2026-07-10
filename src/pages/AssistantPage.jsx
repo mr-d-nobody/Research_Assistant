@@ -22,8 +22,8 @@ const initialConversation = [
 ]
 
 const chatLoadingMessages = [
-  "Loid is preparing a response...",
-  "Loid is reviewing the context...",
+  "Thinking...",
+  "Generating response...",
 ]
 
 const missionLoadingMessages = [

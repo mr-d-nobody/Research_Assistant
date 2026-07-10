@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 
 import { apiRequest } from "./lib/api"
-import { cleanBadUrl, clearToken, getStoredToken, getStoredUser, storeToken, storeUser } from "./lib/storage"
+import { cleanBadUrl, clearToken, getStoredToken, getStoredUser, initDeviceFingerprint, storeToken, storeUser } from "./lib/storage"
 import AssistantPage from "./pages/AssistantPage"
 import AuthPage from "./pages/AuthPage"
 import ProfilePage from "./pages/ProfilePage"
@@ -19,6 +19,7 @@ export default function App() {
 
   useEffect(() => {
     cleanBadUrl()
+    initDeviceFingerprint()
   }, [])
 
   // Silently verify the cached session in the background

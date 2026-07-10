@@ -43,11 +43,22 @@ export function storeUser(user) {
 
 
 export function getDeviceId() {
-  const existing = localStorage.getItem(DEVICE_KEY)
-  if (existing) return existing
+  return localStorage.getItem(DEVICE_KEY) || "pending"
+}
 
-  const generated =
-    crypto.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
-  localStorage.setItem(DEVICE_KEY, generated)
-  return generated
+
+export async function initDeviceFingerprint() {
+  try {
+    const FingerprintJS = await import("@fingerprintjs/fingerprintjs")
+    const fp = await FingerprintJS.load()
+    const result = await fp.get()
+    localStorage.setItem(DEVICE_KEY, result.visitorId)
+  } catch {
+    // Fallback to random ID if fingerprinting fails
+    if (!localStorage.getItem(DEVICE_KEY)) {
+      const fallback =
+        crypto.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
+      localStorage.setItem(DEVICE_KEY, fallback)
+    }
+  }
 }

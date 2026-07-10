@@ -6,6 +6,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^5.2.0",
     "@vercel/analytics": "^2.0.1",
     "@vitejs/plugin-react": "^4.3.4",
     "lucide-react": "^0.468.0",

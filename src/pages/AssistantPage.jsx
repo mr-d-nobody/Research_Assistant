@@ -16,7 +16,7 @@ import { apiRequest } from "../lib/api"
 const initialConversation = [
   {
     role: "assistant",
-    content: "Loid is ready. Start a chat or open a Mission and send an objective.",
+    content: "Loid is ready. Start a chat or begin a Research query.",
     sources: [],
   },
 ]
@@ -171,10 +171,10 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                 className={`mode-button ${mode === "research" ? "mode-button-active" : ""}`}
                 type="button"
                 onClick={() => setMode("research")}
-                title="Mission"
+                title="Research"
               >
                 <Search className="h-4 w-4" />
-                Mission
+                Research
               </button>
             </div>
             <button
@@ -224,8 +224,8 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                     className="min-h-[84px] w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-14 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 sm:min-h-[92px] sm:pr-4 sm:text-sm"
                     placeholder={
                       mode === "research"
-                        ? "Enter an objective for Loid's mission..."
-                        : "Message Loid..."
+                        ? "Enter a research topic..."
+                        : "Type a message..."
                     }
                   />
                   <button

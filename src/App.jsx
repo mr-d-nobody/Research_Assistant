@@ -14,7 +14,6 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ username: "", email: "", password: "" })
   const [authError, setAuthError] = useState("")
   const [authLoading, setAuthLoading] = useState(false)
-  const [otpChallenge, setOtpChallenge] = useState(null)
   const [conversation, setConversation] = useState(null)
 
   const authMode = pathname === "/signup" ? "signup" : "signin"
@@ -82,11 +81,6 @@ export default function App() {
         body: JSON.stringify(payload),
       })
 
-      if (data.requiresOtp) {
-        setOtpChallenge({ ...data, otp: "" })
-        return
-      }
-
       storeToken(data.token)
       setToken(data.token)
       setUser(data.user)
@@ -98,61 +92,6 @@ export default function App() {
     } finally {
       setAuthLoading(false)
     }
-  }
-
-  async function verifyOtp(event) {
-    event.preventDefault()
-    if (!otpChallenge) return
-
-    setAuthError("")
-    setAuthLoading(true)
-
-    try {
-      const data = await apiRequest("/api/auth/verify-otp/", {
-        method: "POST",
-        body: JSON.stringify({
-          challengeId: otpChallenge.challengeId,
-          otp: otpChallenge.otp,
-        }),
-      })
-
-      storeToken(data.token)
-      setToken(data.token)
-      setUser(data.user)
-      storeUser(data.user)
-      setOtpChallenge(null)
-      setAuthForm({ username: "", email: "", password: "" })
-      setConversation(null)
-      navigateTo("/")
-    } catch (error) {
-      setAuthError(error.message)
-    } finally {
-      setAuthLoading(false)
-    }
-  }
-
-  async function resendOtp() {
-    if (!otpChallenge) return
-
-    setAuthError("")
-    setAuthLoading(true)
-
-    try {
-      const data = await apiRequest("/api/auth/resend-otp/", {
-        method: "POST",
-        body: JSON.stringify({ challengeId: otpChallenge.challengeId }),
-      })
-      setOtpChallenge({ ...otpChallenge, ...data, otp: "" })
-    } catch (error) {
-      setAuthError(error.message)
-    } finally {
-      setAuthLoading(false)
-    }
-  }
-
-  function resetOtp() {
-    setOtpChallenge(null)
-    setAuthError("")
   }
 
   async function logout() {
@@ -183,21 +122,12 @@ export default function App() {
     return (
       <AuthPage
         authMode={authMode}
-        setAuthMode={(mode) => {
-          setOtpChallenge(null)
-          setAuthError("")
-          navigateTo(mode === "signup" ? "/signup" : "/signin")
-        }}
+        setAuthMode={(mode) => navigateTo(mode === "signup" ? "/signup" : "/signin")}
         form={authForm}
         setForm={setAuthForm}
         error={authError}
         isLoading={authLoading}
         onSubmit={submitAuth}
-        otpChallenge={otpChallenge}
-        setOtpChallenge={setOtpChallenge}
-        onVerifyOtp={verifyOtp}
-        onResendOtp={resendOtp}
-        onResetOtp={resetOtp}
       />
     )
   }

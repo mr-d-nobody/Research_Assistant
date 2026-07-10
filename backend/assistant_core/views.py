@@ -125,18 +125,9 @@ def mask_email(email):
     return f"{masked_local}@{domain}"
 
 
-def normalize_resend_from_email(value):
-    cleaned = (value or "").strip().strip("\"'")
-    if cleaned.startswith("RESEND_FROM_EMAIL="):
-        cleaned = cleaned.removeprefix("RESEND_FROM_EMAIL=").strip().strip("\"'")
-    cleaned = re.sub(r"\s*<\s*", " <", cleaned)
-    cleaned = re.sub(r"\s*>\s*$", ">", cleaned)
-    return cleaned
-
-
 def send_otp_email(to_email, code):
     api_key = getattr(settings, "RESEND_API_KEY", "")
-    from_email = normalize_resend_from_email(getattr(settings, "RESEND_FROM_EMAIL", ""))
+    from_email = getattr(settings, "RESEND_FROM_EMAIL", "")
 
     if not api_key or not from_email:
         logger.error("Resend credentials are not configured.")

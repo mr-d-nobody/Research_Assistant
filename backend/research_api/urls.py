@@ -8,8 +8,10 @@ from assistant_core.views import (
     login_view,
     logout_view,
     me_view,
+    resend_otp_view,
     signup_view,
     usage_view,
+    verify_otp_view,
 )
 from .views import frontend_view
 
@@ -18,6 +20,8 @@ urlpatterns = [
     path("api/health/", health_view),
     path("api/auth/signup/", signup_view),
     path("api/auth/login/", login_view),
+    path("api/auth/verify-otp/", verify_otp_view),
+    path("api/auth/resend-otp/", resend_otp_view),
     path("api/auth/logout/", logout_view),
     path("api/auth/me/", me_view),
     path("api/auth/change-password/", change_password_view),

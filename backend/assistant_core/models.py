@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import secrets
 
 from django.conf import settings
@@ -70,3 +71,41 @@ class DeviceSignup(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+
+class AuthOtpChallenge(models.Model):
+    LOGIN = "login"
+    SIGNUP = "signup"
+    PURPOSE_CHOICES = [
+        (LOGIN, "Login"),
+        (SIGNUP, "Signup"),
+    ]
+
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
+    email = models.EmailField()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    code_hash = models.CharField(max_length=64)
+    payload = models.JSONField(default=dict, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    expires_at = models.DateTimeField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    verified_at = models.DateTimeField(blank=True, null=True)
+
+    @staticmethod
+    def generate_code():
+        return f"{secrets.randbelow(1_000_000):06d}"
+
+    @staticmethod
+    def hash_code(code):
+        secret = settings.SECRET_KEY.encode("utf-8")
+        return hmac.new(secret, code.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def is_expired(self):
+        return timezone.now() >= self.expires_at
+
+    def code_matches(self, code):
+        return hmac.compare_digest(self.code_hash, self.hash_code(code))

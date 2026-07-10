@@ -3,8 +3,10 @@ import logging
 import re
 from datetime import timedelta
 
+import requests
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -15,7 +17,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .assistant import ResearchAssistant
-from .models import AuthToken, ConversationEntry, DeviceDailyUsage, DeviceSignup, RateLimitBucket
+from .models import (
+    AuthOtpChallenge,
+    AuthToken,
+    ConversationEntry,
+    DeviceDailyUsage,
+    DeviceSignup,
+    RateLimitBucket,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +44,10 @@ SIGNUP_WINDOW_SECONDS = 60 * 60
 SIGNUP_DEVICE_COOLDOWN_DAYS = 90
 PASSWORD_CHANGE_LIMIT = 5
 PASSWORD_CHANGE_WINDOW_SECONDS = 60 * 60
+OTP_TTL_MINUTES = 10
+OTP_MAX_ATTEMPTS = 5
+OTP_LIMIT = 8
+OTP_WINDOW_SECONDS = 15 * 60
 
 
 @require_GET
@@ -100,6 +113,92 @@ def rate_limit_response():
     return JsonResponse(
         {"error": "Too many attempts. Please wait a few minutes and try again."},
         status=429,
+    )
+
+
+def mask_email(email):
+    local, _separator, domain = email.partition("@")
+    if len(local) <= 2:
+        masked_local = f"{local[:1]}***"
+    else:
+        masked_local = f"{local[:2]}***{local[-1:]}"
+    return f"{masked_local}@{domain}"
+
+
+def send_otp_email(to_email, code):
+    api_key = getattr(settings, "RESEND_API_KEY", "")
+    from_email = getattr(settings, "RESEND_FROM_EMAIL", "")
+
+    if not api_key or not from_email:
+        logger.error("Resend credentials are not configured.")
+        return False
+
+    payload = {
+        "from": from_email,
+        "to": [to_email],
+        "subject": "Your ResearchOps AI verification code",
+        "html": (
+            "<p>Your ResearchOps AI verification code is:</p>"
+            f"<p style=\"font-size:24px;font-weight:700;letter-spacing:4px;\">{code}</p>"
+            f"<p>This code expires in {OTP_TTL_MINUTES} minutes.</p>"
+        ),
+        "text": f"Your ResearchOps AI verification code is {code}. It expires in {OTP_TTL_MINUTES} minutes.",
+    }
+
+    try:
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=10,
+        )
+        if response.status_code >= 400:
+            logger.error("Resend OTP email failed: %s %s", response.status_code, response.text[:500])
+            return False
+        return True
+    except requests.RequestException:
+        logger.exception("Resend OTP email request failed.")
+        return False
+
+
+def create_otp_challenge(purpose, email, user=None, payload=None):
+    if not check_rate_limit(f"otp:{email.lower()}", OTP_LIMIT, OTP_WINDOW_SECONDS):
+        return None, None, rate_limit_response()
+
+    AuthOtpChallenge.objects.filter(
+        email__iexact=email,
+        purpose=purpose,
+        verified_at__isnull=True,
+    ).delete()
+
+    code = AuthOtpChallenge.generate_code()
+    challenge = AuthOtpChallenge.objects.create(
+        purpose=purpose,
+        email=email,
+        user=user,
+        payload=payload or {},
+        code_hash=AuthOtpChallenge.hash_code(code),
+        expires_at=timezone.now() + timedelta(minutes=OTP_TTL_MINUTES),
+    )
+
+    if not send_otp_email(email, code):
+        challenge.delete()
+        return None, None, JsonResponse(
+            {"error": "We could not send the verification code right now. Please try again later."},
+            status=502,
+        )
+
+    return challenge, code, None
+
+
+def otp_required_response(challenge):
+    return JsonResponse(
+        {
+            "requiresOtp": True,
+            "challengeId": challenge.id,
+            "emailHint": mask_email(challenge.email),
+            "expiresInMinutes": OTP_TTL_MINUTES,
+        }
     )
 
 
@@ -172,8 +271,8 @@ def signup_view(request):
             {"error": "User ID must be 3-30 characters using letters, numbers, dot, dash, or underscore."},
             status=400,
         )
-    if not is_valid_email(email):
-        return JsonResponse({"error": "Enter a valid email address."}, status=400)
+    if not email or not is_valid_email(email):
+        return JsonResponse({"error": "Enter a valid email address for verification."}, status=400)
     if len(password) < PASSWORD_MIN_LENGTH:
         return JsonResponse({"error": "Password must be at least 8 characters."}, status=400)
     if User.objects.filter(username__iexact=username).exists():
@@ -181,16 +280,22 @@ def signup_view(request):
     if email and User.objects.filter(email__iexact=email).exists():
         return JsonResponse({"error": "That email is already registered."}, status=400)
 
-    user = User.objects.create_user(username=username, email=email, password=password)
-    token = AuthToken.create_for_user(user)
-
-    # Record this device's signup
-    DeviceSignup.objects.update_or_create(
-        device_id=device_id,
-        defaults={"updated_at": timezone.now()},
+    challenge, _code, error_response = create_otp_challenge(
+        purpose=AuthOtpChallenge.SIGNUP,
+        email=email,
+        payload={
+            "username": username,
+            "email": email,
+            "password": make_password(password),
+            "device_id": device_id,
+        },
     )
+    if error_response:
+        return error_response
 
-    return JsonResponse({"token": token, "user": user_payload(user)}, status=201)
+    response = otp_required_response(challenge)
+    response.status_code = 202
+    return response
 
 
 @csrf_exempt
@@ -210,9 +315,124 @@ def login_view(request):
 
     if user is None:
         return JsonResponse({"error": "Invalid user ID or password."}, status=400)
+    if not user.email:
+        return JsonResponse({"error": "This account does not have an email address for OTP verification."}, status=400)
 
+    challenge, _code, error_response = create_otp_challenge(
+        purpose=AuthOtpChallenge.LOGIN,
+        email=user.email,
+        user=user,
+    )
+    if error_response:
+        return error_response
+
+    return otp_required_response(challenge)
+
+
+@csrf_exempt
+@require_POST
+def verify_otp_view(request):
+    payload = parse_json_body(request)
+    if payload is None:
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    try:
+        challenge_id = int(payload.get("challengeId") or 0)
+    except (TypeError, ValueError):
+        challenge_id = 0
+    code = re.sub(r"\D", "", str(payload.get("otp") or ""))
+    if not challenge_id or len(code) != 6:
+        return JsonResponse({"error": "Enter the 6-digit verification code."}, status=400)
+
+    challenge = AuthOtpChallenge.objects.select_related("user").filter(
+        id=challenge_id,
+        verified_at__isnull=True,
+    ).first()
+    if challenge is None:
+        return JsonResponse({"error": "Verification code is no longer valid. Please request a new one."}, status=400)
+    if challenge.is_expired():
+        challenge.delete()
+        return JsonResponse({"error": "Verification code expired. Please sign in again."}, status=400)
+    if challenge.attempts >= OTP_MAX_ATTEMPTS:
+        challenge.delete()
+        return JsonResponse({"error": "Too many incorrect codes. Please sign in again."}, status=429)
+
+    if not challenge.code_matches(code):
+        challenge.attempts += 1
+        challenge.save(update_fields=["attempts"])
+        return JsonResponse({"error": "That verification code is not correct."}, status=400)
+
+    if challenge.purpose == AuthOtpChallenge.LOGIN:
+        user = challenge.user
+        if user is None:
+            challenge.delete()
+            return JsonResponse({"error": "Verification code is no longer valid. Please sign in again."}, status=400)
+    else:
+        pending = challenge.payload or {}
+        username = pending.get("username") or ""
+        email = pending.get("email") or ""
+        password_hash = pending.get("password") or ""
+        device_id = pending.get("device_id") or ""
+
+        if User.objects.filter(username__iexact=username).exists():
+            challenge.delete()
+            return JsonResponse({"error": "That user ID is already taken. Please sign up again."}, status=400)
+        if User.objects.filter(email__iexact=email).exists():
+            challenge.delete()
+            return JsonResponse({"error": "That email is already registered. Please sign in instead."}, status=400)
+
+        user = User.objects.create(username=username, email=email, password=password_hash)
+        DeviceSignup.objects.update_or_create(
+            device_id=device_id,
+            defaults={"updated_at": timezone.now()},
+        )
+
+    challenge.verified_at = timezone.now()
+    challenge.save(update_fields=["verified_at"])
     token = AuthToken.create_for_user(user)
     return JsonResponse({"token": token, "user": user_payload(user)})
+
+
+@csrf_exempt
+@require_POST
+def resend_otp_view(request):
+    payload = parse_json_body(request)
+    if payload is None:
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    try:
+        challenge_id = int(payload.get("challengeId") or 0)
+    except (TypeError, ValueError):
+        challenge_id = 0
+    if not challenge_id:
+        return JsonResponse({"error": "Verification code is no longer valid. Please sign in again."}, status=400)
+
+    challenge = AuthOtpChallenge.objects.filter(id=challenge_id, verified_at__isnull=True).first()
+    if challenge is None or challenge.is_expired():
+        return JsonResponse({"error": "Verification code is no longer valid. Please sign in again."}, status=400)
+    if not check_rate_limit(f"otp-resend:{challenge.email.lower()}", 3, OTP_WINDOW_SECONDS):
+        return rate_limit_response()
+
+    code = AuthOtpChallenge.generate_code()
+    challenge.code_hash = AuthOtpChallenge.hash_code(code)
+    challenge.attempts = 0
+    challenge.expires_at = timezone.now() + timedelta(minutes=OTP_TTL_MINUTES)
+    challenge.save(update_fields=["code_hash", "attempts", "expires_at"])
+
+    if not send_otp_email(challenge.email, code):
+        return JsonResponse(
+            {"error": "We could not send the verification code right now. Please try again later."},
+            status=502,
+        )
+
+    return JsonResponse(
+        {
+            "requiresOtp": True,
+            "challengeId": challenge.id,
+            "emailHint": mask_email(challenge.email),
+            "expiresInMinutes": OTP_TTL_MINUTES,
+        }
+    )
 
 
 @csrf_exempt

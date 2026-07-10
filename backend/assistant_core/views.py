@@ -19,7 +19,7 @@ from .models import AuthToken, ConversationEntry, DeviceDailyUsage, RateLimitBuc
 
 
 logger = logging.getLogger(__name__)
-assistant = ResearchAssistant()
+assistant = None
 CHAT_LIMIT = 10
 RESEARCH_LIMIT = 1
 CHAT_HISTORY_LIMIT = 20
@@ -39,6 +39,13 @@ PASSWORD_CHANGE_WINDOW_SECONDS = 60 * 60
 @require_GET
 def health_view(_request):
     return JsonResponse({"status": "ok"})
+
+
+def get_assistant():
+    global assistant
+    if assistant is None:
+        assistant = ResearchAssistant()
+    return assistant
 
 
 def parse_json_body(request):
@@ -456,7 +463,7 @@ def chat_view(request):
             )
 
     try:
-        result = assistant.chat(prompt=prompt, mode=mode, email_to=email_to)
+        result = get_assistant().chat(prompt=prompt, mode=mode, email_to=email_to)
         save_conversation_entry(user, mode, prompt, result)
         result["usage"] = unlimited_usage_payload() if is_limit_exempt(user) else usage_payload(usage)
         result["history"] = build_conversation_history(user)

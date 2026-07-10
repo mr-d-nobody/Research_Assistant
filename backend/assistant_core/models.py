@@ -63,3 +63,10 @@ class ConversationEntry(models.Model):
 
     class Meta:
         ordering = ["created_at", "id"]
+
+
+class DeviceSignup(models.Model):
+    device_id = models.CharField(max_length=120, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+

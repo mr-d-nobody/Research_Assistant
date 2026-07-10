@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .assistant import ResearchAssistant
-from .models import AuthToken, ConversationEntry, DeviceDailyUsage, RateLimitBucket
+from .models import AuthToken, ConversationEntry, DeviceDailyUsage, DeviceSignup, RateLimitBucket
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ LOGIN_LIMIT = 20
 LOGIN_WINDOW_SECONDS = 10 * 60
 SIGNUP_LIMIT = 5
 SIGNUP_WINDOW_SECONDS = 60 * 60
+SIGNUP_DEVICE_COOLDOWN_DAYS = 90
 PASSWORD_CHANGE_LIMIT = 5
 PASSWORD_CHANGE_WINDOW_SECONDS = 60 * 60
 
@@ -145,6 +146,19 @@ def signup_view(request):
     if not check_rate_limit(f"signup:{get_client_ip(request)}", SIGNUP_LIMIT, SIGNUP_WINDOW_SECONDS):
         return rate_limit_response()
 
+    device_id = get_device_id(request)
+    if not is_valid_device_id(device_id):
+        return JsonResponse({"error": "Please refresh and try again."}, status=400)
+
+    # Enforce 1 signup per device per 90 days
+    cutoff = timezone.now() - timedelta(days=SIGNUP_DEVICE_COOLDOWN_DAYS)
+    recent_signup = DeviceSignup.objects.filter(device_id=device_id, updated_at__gte=cutoff).first()
+    if recent_signup:
+        return JsonResponse(
+            {"error": "This device has already created an account. Please sign in instead."},
+            status=429,
+        )
+
     payload = parse_json_body(request)
     if payload is None:
         return JsonResponse({"error": "Invalid JSON body."}, status=400)
@@ -169,6 +183,13 @@ def signup_view(request):
 
     user = User.objects.create_user(username=username, email=email, password=password)
     token = AuthToken.create_for_user(user)
+
+    # Record this device's signup
+    DeviceSignup.objects.update_or_create(
+        device_id=device_id,
+        defaults={"updated_at": timezone.now()},
+    )
+
     return JsonResponse({"token": token, "user": user_payload(user)}, status=201)
 
 

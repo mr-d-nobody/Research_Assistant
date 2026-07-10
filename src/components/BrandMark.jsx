@@ -18,7 +18,7 @@ export default function BrandMark({ size = "md", stacked = false }) {
         </div>
         {size === "lg" && (
           <div className="mt-1 text-sm font-medium text-slate-500">
-            Research workspace
+            Loid's research workspace
           </div>
         )}
       </div>

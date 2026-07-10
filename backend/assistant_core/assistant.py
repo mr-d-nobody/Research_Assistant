@@ -16,8 +16,13 @@ from tavily import TavilyClient
 
 
 SYSTEM_PROMPT = (
+    "You are Loid, the calm research and intelligence agent inside ResearchOps AI. "
+    "You are professional, precise, discreet, and concise. Do not mention, copy, "
+    "or imitate any copyrighted character, franchise, or protected style. "
     "Use tools when needed, especially when the user asks for real-time information. "
-    "If you use web information, include source links. Keep normal answers concise."
+    "When you use web information, cite intelligence sources with exact links. "
+    "In mission mode, treat the task as a mission, the query as an objective, "
+    "and the final answer as a research brief. Keep normal chat answers natural."
 )
 
 
@@ -206,7 +211,7 @@ class ResearchAssistant:
                 timeout=10,
                 allow_redirects=False,
                 stream=True,
-                headers={"User-Agent": "ResearchAssistant/1.0"},
+                headers={"User-Agent": "ResearchOpsAI-Loid/1.0"},
             ) as response:
                 if 300 <= response.status_code < 400:
                     location = response.headers.get("Location")
@@ -279,18 +284,21 @@ class ResearchAssistant:
             f"- {url} (read in full)" if url in self.read_sources else f"- {url} (search snippet only)"
             for url in self.source_urls()
         ]
-        return "Known sources. If you cite sources, use only these exact URLs:\n" + "\n".join(lines)
+        return "Known intelligence sources. If you cite sources, use only these exact URLs:\n" + "\n".join(lines)
 
     def replace_sources_section(self, content):
         source_urls = self.source_urls()
         if not source_urls:
             return content
 
-        source_lines = ["Sources:"] + [f"- {url}" for url in source_urls]
+        source_lines = ["Intelligence sources:"] + [f"- {url}" for url in source_urls]
         lines = content.strip().splitlines()
-        source_heading = re.compile(r"^\s*(?:#+\s*)?\*{0,2}\s*sources?\s*:?\s*\*{0,2}\s*$", re.I)
+        source_heading = re.compile(
+            r"^\s*(?:#+\s*)?\*{0,2}\s*(?:intelligence\s+)?sources?\s*:?\s*\*{0,2}\s*$",
+            re.I,
+        )
         next_heading = re.compile(
-            r"^\s*(?:#+\s*)?\*{0,2}\s*(summary|key points?|limitations?(?:\s*\([^)]*\))?|conclusion|notes?)\s*:?\s*\*{0,2}\s*$",
+            r"^\s*(?:#+\s*)?\*{0,2}\s*(research brief|summary|key intelligence|key points?|limitations?(?:\s*\([^)]*\))?|conclusion|notes?)\s*:?\s*\*{0,2}\s*$",
             re.I,
         )
 
@@ -359,23 +367,25 @@ class ResearchAssistant:
 
         return (
             f"""
-You are in RESEARCH MODE.
+You are Loid in MISSION MODE.
 
-Topic: {prompt}
+Objective: {prompt}
 
-Required workflow:
-1. Call web_search.
+Required operation:
+1. Call web_search to identify relevant intelligence sources.
 2. Call read_webpage on useful URLs from search results.
-3. Write the final answer only from tool results.
+3. Prepare the research brief only from tool results.
 
-Required final format:
-Summary: 3-4 lines
+Required intelligence brief format:
+Research brief: 3-4 lines
 
-Key Points: bullet points
+Key intelligence: bullet points
 
-Sources: links to the sources used for the answer
+Intelligence sources: links to the sources used for the brief
 
 Limitations (if any): bullet points
+
+Mission complete.
 """,
             5,
         )
@@ -422,7 +432,7 @@ Limitations (if any): bullet points
             message = response.choices[0].message
 
         if message.tool_calls:
-            stop_message = "Stop using tools now. Summarize the findings from the available tool results."
+            stop_message = "Stop executing operations now. Prepare the intelligence brief from the available tool results."
             source_context = self.build_source_context()
             if source_context:
                 stop_message += "\n\n" + source_context
@@ -441,7 +451,7 @@ Limitations (if any): bullet points
         if email_to:
             sent, error = self.send_email(
                 to=email_to,
-                subject=f"Research Results for: {prompt}",
+                subject=f"ResearchOps AI brief: {prompt}",
                 body=content,
             )
             email_status = {"sent": sent, "error": error}

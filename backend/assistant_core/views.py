@@ -322,16 +322,15 @@ def usage_view(request):
 def limit_reached_message(mode, usage=None):
     if usage and usage.chat_count >= CHAT_LIMIT and usage.research_count >= RESEARCH_LIMIT:
         return (
-            "You are all set for today. Thanks for spending time here - come back "
-            "tomorrow and we will continue with fresh chats and research."
+            "Mission complete for today. Loid has logged today's chats and mission. "
+            "Come back tomorrow for a fresh objective."
         )
     if mode == "research":
         return (
-            "You have used today's research. Thanks for stopping by - come back tomorrow "
-            "for a fresh research session."
+            "Loid has completed today's mission. Come back tomorrow with a fresh objective."
         )
     return (
-        "You have used today's chats. Thanks for the thoughtful session - come back "
+        "Loid has wrapped today's chat allocation. Mission notes are saved - come back "
         "tomorrow and we will pick it up again."
     )
 
@@ -432,7 +431,7 @@ def conversation_history_view(request):
 def chat_view(request):
     user = get_authenticated_user(request)
     if user is None:
-        return JsonResponse({"error": "Please sign in to use the assistant."}, status=401)
+        return JsonResponse({"error": "Please sign in to work with Loid."}, status=401)
 
     payload = parse_json_body(request)
     if payload is None:
@@ -473,6 +472,6 @@ def chat_view(request):
             rollback_usage(device_id, mode)
         logger.exception("Assistant request failed.")
         return JsonResponse(
-            {"error": "Something went wrong while answering. Please try again in a moment."},
+            {"error": "Loid hit an issue while preparing the brief. Please try again in a moment."},
             status=500,
         )

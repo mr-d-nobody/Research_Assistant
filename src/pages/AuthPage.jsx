@@ -33,14 +33,14 @@ export default function AuthPage({
             Sign in to ResearchOps AI.
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-            Chat, research, summarize, and send clean source-backed results from one focused workspace.
+            Work with Loid to investigate objectives, analyze intelligence sources, and send clean research briefs.
           </p>
 
           <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2">
             <FeatureCard icon={ShieldCheck} text="Secure workspace" />
-            <FeatureCard icon={CheckCircle2} text="1 research daily" />
+            <FeatureCard icon={CheckCircle2} text="1 mission daily" />
             <FeatureCard icon={MessageSquare} text="10 chats daily" />
-            <FeatureCard icon={Search} text="Source-backed research" />
+            <FeatureCard icon={Search} text="Intelligence sources" />
           </div>
         </div>
 
@@ -48,7 +48,7 @@ export default function AuthPage({
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">
-                {isSignup ? "New workspace" : "Welcome back"}
+                {isSignup ? "New operative file" : "Welcome back"}
               </p>
               <h2 className="mt-1 text-xl font-semibold text-slate-950">
                 {isSignup ? "Create your account" : "Sign in"}

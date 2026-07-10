@@ -64,7 +64,7 @@ export default function ProfilePage({ user, onBack, onLogout, onSessionRefresh }
                 limit={user.isSuperuser ? null : usage?.chatLimit ?? 10}
               />
               <Limit
-                label="Research"
+                label="Missions"
                 used={usage?.researchUsed ?? 0}
                 limit={user.isSuperuser ? null : usage?.researchLimit ?? 1}
               />

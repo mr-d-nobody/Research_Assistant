@@ -1,7 +1,7 @@
 {
   "name": "ResearchOps AI",
   "short_name": "ResearchOps",
-  "description": "A focused workspace for chat, research, summaries, and source-backed results.",
+  "description": "Work with Loid on focused chats, research missions, intelligence sources, and clean briefs.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f7f5ef",

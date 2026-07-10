@@ -16,9 +16,21 @@ import { apiRequest } from "../lib/api"
 const initialConversation = [
   {
     role: "assistant",
-    content: "Welcome back. Choose chat or research mode and send a prompt.",
+    content: "Loid is ready. Start a chat or open a Mission and send an objective.",
     sources: [],
   },
+]
+
+const chatLoadingMessages = [
+  "Loid is preparing a response...",
+  "Loid is reviewing the context...",
+]
+
+const missionLoadingMessages = [
+  "Loid is searching for relevant intelligence sources...",
+  "Loid is reading sources...",
+  "Loid is analyzing intelligence...",
+  "Loid is preparing the research brief...",
 ]
 
 
@@ -28,7 +40,9 @@ export default function AssistantPage({ user, conversation, setConversation, onP
   const [sendEmail, setSendEmail] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(!conversation)
+  const [loadingStatusIndex, setLoadingStatusIndex] = useState(0)
   const [error, setError] = useState("")
+  const activeLoadingMessages = mode === "research" ? missionLoadingMessages : chatLoadingMessages
 
   const canSubmit = useMemo(
     () => message.trim() && !isLoading && !isHistoryLoading,
@@ -71,6 +85,20 @@ export default function AssistantPage({ user, conversation, setConversation, onP
     }
   }, [mode])
 
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStatusIndex(0)
+      return undefined
+    }
+
+    setLoadingStatusIndex(0)
+    const timer = window.setInterval(() => {
+      setLoadingStatusIndex((index) => (index + 1) % activeLoadingMessages.length)
+    }, 1600)
+
+    return () => window.clearInterval(timer)
+  }, [activeLoadingMessages.length, isLoading, mode])
+
   async function handleSubmit(event) {
     event.preventDefault()
     if (!canSubmit) return
@@ -107,7 +135,7 @@ export default function AssistantPage({ user, conversation, setConversation, onP
     } catch (requestError) {
       if (requestError.status === 429) {
         setConversation((items) => [
-          ...items,
+          ...(items || []),
           {
             role: "assistant",
             content: requestError.message,
@@ -143,10 +171,10 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                 className={`mode-button ${mode === "research" ? "mode-button-active" : ""}`}
                 type="button"
                 onClick={() => setMode("research")}
-                title="Research"
+                title="Mission"
               >
                 <Search className="h-4 w-4" />
-                Research
+                Mission
               </button>
             </div>
             <button
@@ -170,13 +198,13 @@ export default function AssistantPage({ user, conversation, setConversation, onP
               {isHistoryLoading && !conversation && (
                 <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
                   <Bot className="h-5 w-5 text-emerald-700" />
-                  Loading your saved conversation...
+                  Loid is retrieving saved briefings...
                 </div>
               )}
               {isLoading && (
                 <div className="flex items-center gap-3 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
                   <Bot className="h-5 w-5 text-emerald-700" />
-                  Thinking through the request...
+                  {activeLoadingMessages[loadingStatusIndex]}
                 </div>
               )}
             </div>
@@ -196,8 +224,8 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                     className="min-h-[84px] w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-14 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 sm:min-h-[92px] sm:pr-4 sm:text-sm"
                     placeholder={
                       mode === "research"
-                        ? "Enter a topic to research with web sources..."
-                        : "Ask anything..."
+                        ? "Enter an objective for Loid's mission..."
+                        : "Message Loid..."
                     }
                   />
                   <button
@@ -214,11 +242,11 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                     className={`hidden min-h-[40px] items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 sm:flex ${
                       mode === "research" && user.email ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                     }`}
-                    title={user.email ? `Sends to ${user.email}` : "No account email saved"}
+                    title={user.email ? `Sends Loid's brief to ${user.email}` : "No account email saved"}
                   >
                     <span className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-emerald-700" />
-                      Email
+                      Brief
                     </span>
                     <input
                       type="checkbox"
@@ -245,10 +273,10 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                           : "border-slate-200 bg-white text-slate-700"
                         : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
                     }`}
-                    title={user.email ? `Sends to ${user.email}` : "No account email saved"}
+                    title={user.email ? `Sends Loid's brief to ${user.email}` : "No account email saved"}
                   >
                     <Mail className="h-4 w-4" />
-                    Email result
+                    Email brief
                     <input
                       type="checkbox"
                       checked={sendEmail}

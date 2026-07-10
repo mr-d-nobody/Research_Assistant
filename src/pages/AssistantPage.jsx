@@ -246,7 +246,7 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                   >
                     <span className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-emerald-700" />
-                      Brief
+                      Email
                     </span>
                     <input
                       type="checkbox"

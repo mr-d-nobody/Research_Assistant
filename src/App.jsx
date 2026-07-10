@@ -11,6 +11,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState("signin")
   const [token, setToken] = useState(() => getStoredToken())
   const [user, setUser] = useState(null)
+  const [isInitializing, setIsInitializing] = useState(() => !!getStoredToken())
   const [authForm, setAuthForm] = useState({ username: "", email: "", password: "" })
   const [authError, setAuthError] = useState("")
   const [authLoading, setAuthLoading] = useState(false)
@@ -22,7 +23,10 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!token) return
+    if (!token) {
+      setIsInitializing(false)
+      return
+    }
     apiRequest("/api/auth/me/")
       .then((data) => setUser(data.user))
       .catch(() => {
@@ -30,6 +34,7 @@ export default function App() {
         setToken(null)
         setConversation(null)
       })
+      .finally(() => setIsInitializing(false))
   }, [token])
 
   async function submitAuth(event) {
@@ -81,6 +86,14 @@ export default function App() {
     if (data.user) {
       setUser(data.user)
     }
+  }
+
+  if (isInitializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f5ef]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700" />
+      </div>
+    )
   }
 
   if (!token || !user) {

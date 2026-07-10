@@ -2,6 +2,22 @@ export const TOKEN_KEY = "research_assistant_token"
 export const DEVICE_KEY = "research_assistant_device_id"
 export const USER_KEY = "research_assistant_user"
 
+// Fallback in-memory ID in case localStorage is disabled or is not yet populated
+const memoryDeviceId = `device-mem-${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+// Synchronously initialize the device ID in localStorage if available
+if (typeof window !== "undefined" && window.localStorage) {
+  try {
+    if (!localStorage.getItem(DEVICE_KEY)) {
+      const fallback =
+        crypto.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
+      localStorage.setItem(DEVICE_KEY, fallback)
+    }
+  } catch {
+    // Ignore storage-disabled errors
+  }
+}
+
 
 export function cleanBadUrl() {
   const path = window.location.pathname
@@ -43,7 +59,11 @@ export function storeUser(user) {
 
 
 export function getDeviceId() {
-  return localStorage.getItem(DEVICE_KEY) || "pending"
+  try {
+    return localStorage.getItem(DEVICE_KEY) || memoryDeviceId
+  } catch {
+    return memoryDeviceId
+  }
 }
 
 
@@ -52,13 +72,21 @@ export async function initDeviceFingerprint() {
     const FingerprintJS = await import("@fingerprintjs/fingerprintjs")
     const fp = await FingerprintJS.load()
     const result = await fp.get()
-    localStorage.setItem(DEVICE_KEY, result.visitorId)
+    try {
+      localStorage.setItem(DEVICE_KEY, result.visitorId)
+    } catch {
+      // Ignore write failures in private/restricted storage
+    }
   } catch {
-    // Fallback to random ID if fingerprinting fails
-    if (!localStorage.getItem(DEVICE_KEY)) {
-      const fallback =
-        crypto.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
-      localStorage.setItem(DEVICE_KEY, fallback)
+    // Fallback if fingerprinting fails
+    try {
+      if (!localStorage.getItem(DEVICE_KEY)) {
+        const fallback =
+          crypto.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
+        localStorage.setItem(DEVICE_KEY, fallback)
+      }
+    } catch {
+      // Ignore
     }
   }
 }

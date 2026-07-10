@@ -30,7 +30,7 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = env_csv(
     "DJANGO_ALLOWED_HOSTS",
-    "localhost,127.0.0.1" if DEBUG else "",
+    "*" if (DEBUG or os.getenv("VERCEL") == "1" or os.getenv("VERCEL_URL")) else "localhost,127.0.0.1",
 )
 VERCEL_URL = os.getenv("VERCEL_URL")
 if VERCEL_URL and VERCEL_URL not in ALLOWED_HOSTS:
@@ -89,12 +89,12 @@ CORS_ALLOWED_ORIGINS = env_csv(
     "CORS_ALLOWED_ORIGINS",
     "http://localhost:5173,http://127.0.0.1:5173" if DEBUG else "",
 )
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 CSRF_TRUSTED_ORIGINS = env_csv("CSRF_TRUSTED_ORIGINS")
 if VERCEL_URL:
     vercel_origin = f"https://{VERCEL_URL}"
     if vercel_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(vercel_origin)
-
 AUTH_TOKEN_TTL_HOURS = int(os.getenv("AUTH_TOKEN_TTL_HOURS", "168"))
 DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE", "262144"))
 

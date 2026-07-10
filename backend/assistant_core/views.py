@@ -25,7 +25,7 @@ RESEARCH_LIMIT = 1
 CHAT_HISTORY_LIMIT = 20
 RESEARCH_HISTORY_LIMIT = 2
 PASSWORD_MIN_LENGTH = 8
-MAX_PROMPT_LENGTH = 4000
+MAX_PROMPT_LENGTH = 2000
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]{3,30}$")
 DEVICE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_.:-]{8,120}$")
 LOGIN_LIMIT = 20
@@ -467,7 +467,7 @@ def chat_view(request):
     if not prompt:
         return JsonResponse({"error": "Message is required."}, status=400)
     if len(prompt) > MAX_PROMPT_LENGTH:
-        return JsonResponse({"error": "Message is too long. Keep it under 4,000 characters."}, status=400)
+        return JsonResponse({"error": "Message is too long. Keep it under 2,000 characters."}, status=400)
     if mode == "research" and wants_email and not user.email:
         return JsonResponse({"error": "Add an email to your profile before sending results."}, status=400)
     if not is_valid_device_id(device_id):

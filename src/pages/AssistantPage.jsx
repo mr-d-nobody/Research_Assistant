@@ -221,6 +221,7 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                   <textarea
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
+                    maxLength={2000}
                     className="min-h-[84px] w-full resize-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-14 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 sm:min-h-[92px] sm:pr-4 sm:text-sm"
                     placeholder={
                       mode === "research"
@@ -228,6 +229,11 @@ export default function AssistantPage({ user, conversation, setConversation, onP
                         : "Type a message..."
                     }
                   />
+                  {message.length > 0 && (
+                    <div className="absolute right-4 bottom-2 text-[10px] text-slate-400 pointer-events-none select-none">
+                      {message.length}/2000
+                    </div>
+                  )}
                   <button
                     type="submit"
                     disabled={!canSubmit}

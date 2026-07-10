@@ -221,7 +221,7 @@ def cleanup_messages(messages):
 messages = [
     {
         "role": "system",
-        "content": "Use tools when needed especially when it involves real time information and answer in 5-6 lines but if you have accessed web information then provide source as well. If it does not need tool calling then answer in 4-5 sentences."
+        "content": "Use tools when needed especially when it involves real time information. In normal mode, restrict your answer to exactly 5-6 lines and format your response in Markdown. If you have accessed web information then provide source as well."
     }
 ]
 
